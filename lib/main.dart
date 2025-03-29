@@ -41,7 +41,8 @@ class MyApp extends StatelessWidget {
         home: Consumer<AuthProvider>(
           builder: (context, authProvider, _) {
             // If the user is authenticated, go to HomeScreen; otherwise, show LoginScreen.
-            return authProvider.isAuthenticated ? HomeScreen() : LoginScreen();
+            // return authProvider.isAuthenticated ? HomeScreen() : LoginScreen();
+            return authProvider.isAuthenticated ? HomeScreen() : HomeScreen();
           },
         ),
       ),

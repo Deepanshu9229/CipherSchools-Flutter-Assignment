@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../providers/expense_provider.dart';
 import '../models/expense.dart';
 import '../widgets/expense_item.dart';
+import '../widgets/stat_card.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -11,7 +12,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Controllers and default selections for the add expense dialog.
   final TextEditingController titleController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
   String selectedCategory = 'Food';
@@ -23,12 +23,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final expenseProvider = Provider.of<ExpenseProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
+    // Calculate total income, total expense, and net balance
     double totalIncome = expenseProvider.expenses
         .where((e) => e.isIncome)
-        .fold(0, (prev, e) => prev + e.amount);
+        .fold(0, (sum, e) => sum + e.amount);
     double totalExpense = expenseProvider.expenses
         .where((e) => !e.isIncome)
-        .fold(0, (prev, e) => prev + e.amount);
+        .fold(0, (sum, e) => sum + e.amount);
+    double accountBalance = totalIncome - totalExpense;
 
     return Scaffold(
       appBar: AppBar(
@@ -39,46 +41,61 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () async {
               await authProvider.signOut();
             },
-          )
+          ),
         ],
       ),
       body: Column(
         children: [
-          // Summary Section
+          SizedBox(height: 16),
+          // Centered Account Balance
+          Text(
+            'Account Balance',
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          ),
+          SizedBox(height: 4),
+          Text(
+            '₹${accountBalance.toStringAsFixed(0)}',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 16),
+
+          // Two StatCards for Income & Expenses
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Column(
-                  children: [
-                    Text('Income',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text('\$${totalIncome.toStringAsFixed(2)}'),
-                  ],
+                Expanded(
+                  child: StatCard(
+                    label: 'Income',
+                    amount: totalIncome,
+                    bgColor: Colors.green[50]!,
+                    textColor: Colors.green[700]!,
+                  ),
                 ),
-                Column(
-                  children: [
-                    Text('Expenses',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text('\$${totalExpense.toStringAsFixed(2)}'),
-                  ],
+                SizedBox(width: 16),
+                Expanded(
+                  child: StatCard(
+                    label: 'Expenses',
+                    amount: totalExpense,
+                    bgColor: Colors.red[50]!,
+                    textColor: Colors.red[700]!,
+                  ),
                 ),
               ],
             ),
           ),
-          // Expenses List
+          SizedBox(height: 16),
+
+          // Expanded list of transactions
           Expanded(
             child: ListView.builder(
               itemCount: expenseProvider.expenses.length,
               itemBuilder: (context, index) {
-                Expense expense = expenseProvider.expenses[index];
+                final expense = expenseProvider.expenses[index];
                 return Dismissible(
                   key: Key(expense.id),
                   direction: DismissDirection.endToStart,
-                  onDismissed: (direction) {
-                    expenseProvider.deleteExpense(expense);
-                  },
+                  onDismissed: (_) => expenseProvider.deleteExpense(expense),
                   background: Container(
                     color: Colors.red,
                     alignment: Alignment.centerRight,
@@ -101,10 +118,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showAddExpenseDialog(BuildContext context, expenseProvider) {
+  void _showAddExpenseDialog(BuildContext context, ExpenseProvider expenseProvider) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return StatefulBuilder(builder: (context, setStateDialog) {
           return AlertDialog(
             title: Text('Add Expense/Income'),
@@ -122,54 +139,50 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   DropdownButton<String>(
                     value: selectedCategory,
-                    onChanged: (String? newValue) {
+                    onChanged: (newValue) {
                       if (newValue != null) {
                         setStateDialog(() {
                           selectedCategory = newValue;
                         });
                       }
                     },
-                    items: categories.map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
+                    items: categories
+                        .map((value) => DropdownMenuItem(
+                              child: Text(value),
+                              value: value,
+                            ))
+                        .toList(),
                   ),
                   SwitchListTile(
                     title: Text('Is Income'),
                     value: isIncome,
-                    onChanged: (val) {
-                      setStateDialog(() {
-                        isIncome = val;
-                      });
-                    },
+                    onChanged: (val) => setStateDialog(() => isIncome = val),
                   ),
                 ],
               ),
             ),
             actions: [
               TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text('Cancel')),
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Cancel'),
+              ),
               ElevatedButton(
-                  onPressed: () {
-                    final expense = Expense(
-                      id: DateTime.now().toString(),
-                      title: titleController.text,
-                      amount: double.tryParse(amountController.text) ?? 0,
-                      category: selectedCategory,
-                      date: DateTime.now(),
-                      isIncome: isIncome,
-                    );
-                    expenseProvider.addExpense(expense);
-                    titleController.clear();
-                    amountController.clear();
-                    Navigator.of(context).pop();
-                  },
-                  child: Text('Add'))
+                onPressed: () {
+                  final newExpense = Expense(
+                    id: DateTime.now().toString(),
+                    title: titleController.text,
+                    amount: double.tryParse(amountController.text) ?? 0,
+                    category: selectedCategory,
+                    date: DateTime.now(),
+                    isIncome: isIncome,
+                  );
+                  expenseProvider.addExpense(newExpense);
+                  titleController.clear();
+                  amountController.clear();
+                  Navigator.of(context).pop();
+                },
+                child: Text('Add'),
+              ),
             ],
           );
         });
