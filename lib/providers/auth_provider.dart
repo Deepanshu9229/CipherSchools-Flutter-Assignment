@@ -15,24 +15,52 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
 
   AuthProvider() {
-    _checkUserStatus();
-  }
-
-  // Checking the current authentication status using SharedPreferences.
-  Future<void> _checkUserStatus() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? storedUserId = prefs.getString('userId');
-    if (storedUserId != null) {
-      _user = _auth.currentUser;
+    // Listen to Firebase auth state changes for automatic updates.
+    _auth.authStateChanges().listen((User? user) async {
+      _user = user;
       _isAuthenticated = _user != null;
-    } else {
-      _user = null;
-      _isAuthenticated = false;
-    }
-    notifyListeners();
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      if (_isAuthenticated && _user != null) {
+        await prefs.setString('userId', _user!.uid);
+      } else {
+        await prefs.remove('userId');
+      }
+      notifyListeners();
+    });
   }
 
-  //Sign Up with Google
+  /// Sign In with Google
+  Future<void> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        print("User canceled Google Sign-In");
+        return;
+      }
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      UserCredential userCredential = await _auth.signInWithCredential(credential);
+      _user = userCredential.user;
+      _isAuthenticated = _user != null;
+      notifyListeners();
+
+      if (_user != null) {
+        // Update or set user info in Firestore (merge with existing data if any)
+        await FirebaseFirestore.instance.collection('users').doc(_user!.uid).set({
+          'name': _user!.displayName,
+          'email': _user!.email,
+        }, SetOptions(merge: true));
+        print("User signed in: ${_user?.displayName}");
+      }
+    } catch (e) {
+      print("Error signing in with Google: $e");
+    }
+  }
+
+  /// Sign Up with Google
   Future<void> signUpWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -40,26 +68,19 @@ class AuthProvider extends ChangeNotifier {
         print("User canceled Google Sign-Up");
         return;
       }
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-
-      UserCredential userCredential =
-          await _auth.signInWithCredential(credential);
+      UserCredential userCredential = await _auth.signInWithCredential(credential);
       _user = userCredential.user;
       _isAuthenticated = _user != null;
       notifyListeners();
 
       if (userCredential.additionalUserInfo?.isNewUser ?? false) {
-        // saving info in Firestore
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(_user!.uid)
-            .set({
+        // If it's a new user, save their info in Firestore.
+        await FirebaseFirestore.instance.collection('users').doc(_user!.uid).set({
           'name': _user!.displayName,
           'email': _user!.email,
         }, SetOptions(merge: true));
@@ -68,61 +89,20 @@ class AuthProvider extends ChangeNotifier {
         print("Existing user signing up, treating as login: ${_user?.displayName}");
       }
 
-     // for remain login 
+      // Store user id locally for persistent login
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('userId', _user!.uid);
       print("User ID stored in local storage.");
-
     } catch (e) {
       print("Error signing up with Google: $e");
     }
   }
 
-  //Sign In with Google
-  Future<void> signInWithGoogle() async {
-    try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        print("User canceled Google Sign-In");
-        return;
-      }
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      UserCredential userCredential =
-          await _auth.signInWithCredential(credential);
-      _user = userCredential.user;
-      _isAuthenticated = _user != null;
-      notifyListeners();
-
-      // Updateing  Firestore 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_user!.uid)
-          .set({
-        'name': _user!.displayName,
-        'email': _user!.email,
-      }, SetOptions(merge: true));
-      print("User signed in: ${_user?.displayName}");
-
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('userId', _user!.uid);
-      print("User ID stored in local storage.");
-    } catch (e) {
-      print("Error signing in with Google: $e");
-    }
-  }
-
-  //Sign Out
+  /// Sign Out
   Future<void> signOut() async {
     try {
       await _auth.signOut();
-      await _googleSignIn.signOut();
+      await _googleSignIn.disconnect();
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.remove('userId');
       _user = null;

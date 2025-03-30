@@ -58,3 +58,17 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.1.0")
+    implementation(platform("com.google.firebase:firebase-bom:33.11.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
+}
+configurations.all {
+    resolutionStrategy {
+        force("org.jetbrains.kotlin:kotlin-stdlib:2.0.0")
+        force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.0.0")
+        force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.0")
+    }
+}
