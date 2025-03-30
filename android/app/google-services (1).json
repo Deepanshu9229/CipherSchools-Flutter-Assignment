@@ -7,6 +7,50 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:110886268860:android:a2c31fc566628d966e05b9",
+        "android_client_info": {
+          "package_name": "com.cipherschools.assignment"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "110886268860-17vnpao5sjthplfe0e6ihptdifvk2g8o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cipherschools.assignment",
+            "certificate_hash": "82982ea33dbd7e4f5dcc3a4c989e28697fb5020d"
+          }
+        },
+        {
+          "client_id": "110886268860-8s4tbdpnch2dru73juqfiv8tabdg0bmv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJ8uv9PBc1gCptjkUK69rmZytPnLf-gV0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "110886268860-8s4tbdpnch2dru73juqfiv8tabdg0bmv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "110886268860-03l43qjr4spu5ilnhrcbh80oivsm16ps.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.expenseTrackerApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:110886268860:android:bafcee4b4aa1cf406e05b9",
         "android_client_info": {
           "package_name": "com.example.expense_tracker_app"
