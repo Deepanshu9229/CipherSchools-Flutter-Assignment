@@ -30,7 +30,7 @@ class StatCard extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            '\Rs. ${amount.toStringAsFixed(2)}',
+            '\₹ ${amount.toStringAsFixed(2)}',
             style: TextStyle(fontSize: 16, color: textColor),
           ),
         ],

@@ -16,11 +16,11 @@ class ExpenseProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addExpense(Expense expense) async {
-    _expenses.add(expense);
-    await LocalStorageService.saveExpenses(_expenses);
-    notifyListeners();
-  }
+void addExpense(Expense expense) {
+  _expenses.insert(0, expense); 
+  notifyListeners();
+}
+
 
   Future<void> deleteExpense(Expense expense) async {
     _expenses.remove(expense);

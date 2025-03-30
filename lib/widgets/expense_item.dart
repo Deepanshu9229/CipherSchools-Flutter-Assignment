@@ -14,8 +14,9 @@ class ExpenseItem extends StatelessWidget {
         color: expense.isIncome ? Colors.green : Colors.red,
       ),
       title: Text(expense.title),
-      subtitle: Text('${expense.category} • ${DateFormat.yMMMd().format(expense.date)}'),
-      trailing: Text('\Rs. ${expense.amount.toStringAsFixed(2)}'),
+      subtitle: Text(
+          '${expense.category} • ${DateFormat.yMMMd().format(expense.date)}'),
+      trailing: Text('\₹${expense.amount.toStringAsFixed(2)}'),
     );
   }
 }
