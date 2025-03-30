@@ -1,3 +1,4 @@
+import 'package:expense_tracker_app/screens/signup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -53,11 +54,15 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text('Expense Tracker'),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () async {
-              await authProvider.signOut();
-            },
-          ),
+  icon: const Icon(Icons.logout),
+  onPressed: () async {
+    await Provider.of<AuthProvider>(context, listen: false).signOut();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => SignupScreen()),
+    );
+  },
+)
         ],
       ),
       body: Column(
